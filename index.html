@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Proyecto 21 · Fiscalización y registro portuario</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="prog"></div>
+<header class="top"><strong>Proyecto 21</strong>
+  <nav><a href="#inicio">Inicio</a><a href="#datos">Datos</a><a href="#panorama">Panorama</a><a href="#orden">Ordenamiento</a><a href="#busqueda">Búsqueda</a><a href="#stats">Estadísticas</a><a href="#fuentes">Fuentes</a></nav>
+</header>
+<main>
+<section id="inicio" class="hero">
+  <i class="cnt" style="top:10%;right:6%;background:#14b8b0"></i><i class="cnt" style="top:26%;right:22%;background:#f5a524;animation-delay:-2s"></i><i class="cnt" style="top:12%;right:38%;background:#e5484d;animation-delay:-4s"></i><i class="cnt" style="top:48%;right:10%;background:#2f6fed;animation-delay:-1s"></i><i class="cnt" style="top:40%;right:31%;background:#30a46c;animation-delay:-3s"></i>
+  <div class="olas" aria-hidden="true"><svg viewBox="0 0 1200 120" preserveAspectRatio="none"><path fill="rgba(20,184,176,.45)" d="M0 60q150-50 300 0t300 0 300 0 300 0V120H0Z"/></svg><svg viewBox="0 0 1200 120" preserveAspectRatio="none"><path fill="#f3f6f9" d="M0 70q150-45 300 0t300 0 300 0 300 0V120H0Z"/></svg></div>
+  <h1>Fiscalización y registro de tráfico y contenedores en puertos marítimos nacionales</h1>
+  <h3>Introducción</h3>
+  <p>Los puertos marítimos son puntos clave del comercio exterior de México: por ellos entran y salen mercancías que abastecen a la industria y al consumo. Cada operación genera información (contenedores, pesos, fechas, líneas navieras, trámite aduanal) que debe organizarse para poder consultarse con rapidez. Este proyecto escolar compara algoritmos de ordenamiento y búsqueda sobre registros cargados en la memoria RAM del navegador, midiendo tiempo, comparaciones y movimientos. La aplicación no está conectada a sistemas oficiales de SEMAR ni de las ASIPONA: solo procesa el archivo CSV que tú selecciones, y ese archivo no sale de tu equipo.</p>
+  <div class="cards">
+    <div class="card"><span>Registros cargados</span><b id="k-total">0</b></div>
+    <div class="card"><span>Estado de la carga</span><b id="k-estado">Sin datos</b></div>
+    <div class="card"><span>Tiempo de carga (ns)</span><b id="k-carga">—</b></div>
+    <div class="card"><span>Ordenado por</span><b id="k-orden">—</b></div>
+  </div>
+  <p class="acciones"><button id="btn-demo" class="btn glow">Cargar los 15,000 registros incluidos</button> <a class="btn" href="data/registros_puertos_15000.csv" download>Descargar CSV</a> <a class="btn" href="data/registros_puertos_15000.xlsx" download>Descargar Excel</a></p>
+</section>
+
+<section id="datos">
+  <h2>1. Carga y visualización de datos</h2>
+  <p>Selecciona un CSV con las 10 columnas: <code>id_contenedor_teu, peso_bruto_kg, fecha_atracadero (AAAAMMDD), puerto_operacion, linea_naviera, estado, municipio, tipo_carga, estatus_aduanal, costo_maniobra_usd</code>. Acepta 15,000 registros o más.</p>
+  <label class="btn">Seleccionar archivo CSV<input id="csv" type="file" accept=".csv,text/csv" hidden></label>
+  <label class="btn off" id="lbl-csv2">Agregar segundo lote (CSV)<input id="csv2" type="file" accept=".csv,text/csv" hidden disabled></label>
+  <pre id="estado-carga" class="msg">Aún no se ha cargado ningún archivo.</pre>
+  <h3>Primeros 30 registros</h3><div id="t-primeros" class="scroll"></div>
+  <h3>Últimos 30 registros</h3><div id="t-ultimos" class="scroll"></div>
+</section>
+
+<section id="panorama">
+  <h2>Panorama de los datos</h2>
+  <p id="pan-vacio" class="nota">Carga los registros (tuyos o los incluidos) para ver los indicadores y gráficas calculados a partir de ellos.</p>
+  <div id="pan" hidden>
+    <div class="cards" id="pan-kpis"></div>
+    <div class="grid2">
+      <div class="panel"><h3>Registros por puerto</h3><div id="g-puerto"></div></div>
+      <div class="panel"><h3>Registros por línea naviera</h3><div id="g-naviera"></div></div>
+      <div class="panel"><h3>Estatus aduanal</h3><div id="g-estatus" class="dwrap"></div></div>
+      <div class="panel"><h3>Tipo de carga</h3><div id="g-carga" class="dwrap"></div></div>
+      <div class="panel wide"><h3>Operaciones por mes de atraque</h3><div id="g-mes"></div></div>
+      <div class="panel wide"><h3>Costo promedio de maniobra por tipo de carga (USD)</h3><div id="g-costo"></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="orden">
+  <h2>2. Ordenamiento aleatorio y rendimiento</h2>
+  <button id="btn-orden" class="btn" disabled>Ejecutar ordenamiento aleatorio</button>
+  <pre id="res-orden" class="msg">Carga datos para habilitar el ordenamiento.</pre>
+  <details><summary>¿Cómo se cuentan los datos?</summary>
+    <ul>
+      <li><b>Radix Sort</b> (id): enteros no negativos, base 256. Comparaciones = 0; movimientos = registros colocados en cada pasada.</li>
+      <li><b>Counting Sort</b> (id): solo si el rango de valores es ≤ 10,000,000; si no, se descarta. Comparaciones = 0.</li>
+      <li><b>Bucket Sort</b> (peso): n cubetas según mínimo y máximo; cada cubeta se ordena por inserción. Es lento si casi todos los pesos caen en una sola cubeta.</li>
+      <li><b>Quick Sort</b>, <b>Merge Sort</b>, <b>Heap Sort</b> (fecha): comparaciones entre claves; movimientos = intercambios (Quick, Heap) o escrituras (Merge).</li>
+      <li>No se cuentan: búsqueda de mínimo/máximo, acceso a la clave ni la copia inicial del arreglo.</li>
+    </ul></details>
+  <h3>Primeros 30 registros ordenados</h3><div id="t-ordenados" class="scroll"></div>
+</section>
+
+<section id="busqueda">
+  <h2>3. Búsqueda lineal y binaria</h2>
+  <button id="btn-metodo" class="btn" disabled>Seleccionar método aleatorio</button>
+  <pre id="info-metodo" class="msg">Primero ejecuta un ordenamiento.</pre>
+  <div id="form-busq" hidden>
+    <label>Campo <select id="campo-busq"></select></label>
+    <label>Valor a buscar <input id="valor-busq" type="text" list="sug" autocomplete="off"><datalist id="sug"></datalist></label>
+    <button id="btn-buscar" class="btn">Buscar</button>
+  </div>
+  <pre id="res-busq" class="msg"></pre>
+  <div id="t-hallados" class="scroll"></div>
+  <p class="nota">La búsqueda lineal permite consultar cualquiera de los 10 campos. La búsqueda binaria requiere que los datos estén ordenados previamente por el campo clave seleccionado. Los resultados muestran la fila correspondiente y hasta 100 coincidencias.</p>
+</section>
+
+<section id="stats">
+  <h2>4. Estadísticas y registro de ejecuciones</h2>
+  <h3>Uso de cada método de ordenamiento</h3><p id="alfa" class="msg"></p><div id="grafica" class="grafica" role="img" aria-label="Gráfica de barras: veces que se ejecutó cada algoritmo de ordenamiento"></div><div id="t-stats" class="scroll"></div>
+  <h3>Historial de ordenamientos</h3><div id="t-hist" class="scroll"></div>
+  <button id="exp-orden" class="btn">Exportar historial de ordenamiento (CSV)</button>
+  <h3>Historial de búsquedas</h3><div id="t-busq" class="scroll"></div>
+  <button id="exp-busq" class="btn">Exportar historial de búsqueda (CSV)</button>
+</section>
+
+<section id="fuentes">
+  <h2>5. Fuentes de información y créditos</h2>
+  <ul>
+    <li><a href="https://www.datos.gob.mx/" target="_blank" rel="noopener">datos.gob.mx</a>: portal de datos abiertos del Gobierno de México.</li>
+    <li><a href="https://www.gob.mx/semar" target="_blank" rel="noopener">SEMAR</a>: Secretaría de Marina.</li>
+    <li><a href="https://www.inegi.org.mx/" target="_blank" rel="noopener">INEGI</a>: estadística y geografía nacional.</li>
+  <li><a href="data/registros_puertos_15000.csv" download>registros_puertos_15000</a>: conjunto de 15,000 registros incluido en el proyecto (CSV y Excel) para las pruebas y el panorama.</li>
+  </ul>
+
+  <div class="creditos">
+  <h3>Créditos</h3>
+
+  <div class="creditos-grid">
+    <div class="credito">
+      <strong>Proyecto</strong>
+      <span>Proyecto escolar universitario</span>
+    </div>
+
+    <div class="credito">
+      <strong>Integrantes del equipo</strong>
+      <span>Soto Benítez Diego Fernando</span>
+      <span>Ricardo Gabriel Navarrete García</span>
+    </div>
+
+    <div class="credito">
+      <strong>Institución</strong>
+      <span>Licenciatura en Informática · FCAEI-UAEM</span>
+    </div>
+
+    <div class="credito">
+      <strong>Materia</strong>
+      <span>Métodos de ordenación y búsqueda</span>
+    </div>
+  </div>
+</div>
+
+</section>
+</main>
+<script src="js/config.js"></script>
+<script src="js/data.js"></script>
+<script src="js/csv.js"></script>
+<script src="js/sorts.js"></script>
+<script src="js/search.js"></script>
+<script src="js/log.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/dash.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
