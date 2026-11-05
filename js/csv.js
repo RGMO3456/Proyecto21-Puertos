@@ -60,3 +60,4 @@
     return { registros: res, agregados: res.length - actuales.length, duplicados: dup };
   };
 })(window.P21);
+
