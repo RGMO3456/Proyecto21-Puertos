@@ -17,3 +17,4 @@ window.P21 = window.P21 || {};
   P.ALGOS = ['Radix Sort', 'Counting Sort', 'Bucket Sort', 'Quick Sort', 'Merge Sort', 'Heap Sort'];
   P.LIMITE_COUNTING = 10000000; // rango máximo permitido (Int32Array ≈ 40 MB); los ids del Excel abarcan 7,827,586 valores
 })(window.P21);
+
