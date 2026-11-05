@@ -12,7 +12,7 @@
   }
   function vaciar() {
     E.registros = []; E.orden = E.campo = E.ultima = null;
-    ['t-primeros', 't-ultimos', 't-ordenados'].forEach(i => $(i).replaceChildren());
+    ['t-primeros', 't-ultimos', 't-ordenados', 't-ultimos-ordenados'].forEach(i => $(i).replaceChildren());
     $('k-total').textContent = '0'; $('k-carga').textContent = $('k-orden').textContent = '—';
     P.msg('res-orden', 'Carga datos válidos para habilitar el ordenamiento.'); P.panorama(null);
   }
@@ -38,7 +38,7 @@
     const ms = performance.now() - t0;                    // lectura + validación + conversión (+ combinación)
     E.registros = regs; E.orden = E.campo = E.ultima = null; const n = regs.length;
     $('k-total').textContent = P.fmt(n); $('k-estado').textContent = 'Cargado en RAM';
-    $('k-carga').textContent = P.fmt(nsDe(ms)); $('k-orden').textContent = '—'; $('t-ordenados').replaceChildren();
+    $('k-carga').textContent = P.fmt(nsDe(ms)); $('k-orden').textContent = '—'; $('t-ordenados').replaceChildren(); $('t-ultimos-ordenados').replaceChildren();
     P.msg('estado-carga', `Carga correcta: ${P.fmt(n)} registros con 10 columnas en ${P.fmt(nsDe(ms))} ns (${ms.toFixed(3)} ms, conversión de performance.now()).${extra}`, 'ok');
     P.msg('res-orden', 'Datos listos. Ejecuta el ordenamiento aleatorio.');
     P.tablaRegistros($('t-primeros'), regs.slice(0, 30), 1);   // el dibujo queda fuera del cronómetro
@@ -62,6 +62,8 @@
     P.msg('res-orden', `Se ordenaron ${P.fmt(E.orden.length)} registros por el campo ${campo} (clave ${k}) usando el método ${alg} en ${P.fmt(r.ns)} nanosegundos. Comparaciones: ${P.fmt(r.cmp)}. Intercambios/Movimientos: ${P.fmt(r.mov)}`, 'ok');
     P.registrarOrden({ clave: k, campo, algoritmo: alg, ns: r.ns, cmp: r.cmp, mov: r.mov });
     $('k-orden').textContent = campo; P.tablaRegistros($('t-ordenados'), E.orden.slice(0, 30), 1);
+    const ini = Math.max(0, E.orden.length - 30);        // últimos 30 (o todos, si hay menos) del arreglo ya ordenado
+    P.tablaRegistros($('t-ultimos-ordenados'), E.orden.slice(ini), ini + 1);
     estados(); P.pintarHistorial();
   });
 
@@ -86,7 +88,8 @@
     if (v === null) return P.msg('res-busq', 'Escribe un valor válido (en campos numéricos, solo dígitos y punto decimal).', 'err');
     const r = (bin ? P.buscarBinaria : P.buscarLineal)(E.orden, campo, v);
     P.msg('res-busq', `Se realizó la búsqueda en ${P.fmt(E.orden.length)} registros por el campo ${campo} usando el método ${E.metodo} en ${P.fmt(r.ns)} nanosegundos. Comparaciones: ${P.fmt(r.cmp)}. Coincidencias: ${P.fmt(r.pos.length)}`, r.pos.length ? 'ok' : '');
-    P.tabla($('t-hallados'), ['Fila', ...P.CAMPOS.map(c => c.n)], r.pos.slice(0, 100).map(i => [i + 1, ...P.CAMPOS.map(c => E.orden[i][c.n])]));
+    const hallados = r.pos.slice(0, 100).map(i => [i, E.orden[i]]);   // [posición en E.orden, registro de E.orden]; nunca E.registros
+    P.tabla($('t-hallados'), ['Fila', ...P.CAMPOS.map(c => c.n)], hallados.map(([i, reg]) => [i + 1, ...P.CAMPOS.map(c => reg[c.n])]));
     P.registrarBusq({ campo, metodo: E.metodo, valor: txt.trim(), ns: r.ns, cmp: r.cmp, hallados: r.pos.length }); P.pintarHistorial();
   });
 
